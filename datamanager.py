@@ -58,31 +58,41 @@ class DataManager(object):
             ctr_x, ctr_y, radius, box = self.gen_circle(shape)
             cv2.circle(image, (ctr_x, ctr_y), radius, color, -1)
 
-        return image, box
+        return image, box, shape_choice
 
-    def gen_toy_detection_sample(self, num, shape=(108, 192, 3)):
+    def gen_toy_detection_sample(self, num, shape=(108, 192, 3), need_mask_label=False):
         x = []
         y = []
+        categories = []
+        ctr_mask_labels = []
 
         for _ in range(num):
             toy_sample = np.zeros(shape, np.uint8)
+            ctr_mask_label = np.zeros((shape[0], shape[1], 1), np.uint8)
+
             box_list = []
+            cat_list = []
             num_obj = random.randint(1, 3)
             for _ in range(num_obj):
-                image, box = self.gen_random_shape(toy_sample, shape)
+                image, box, category = self.gen_random_shape(toy_sample, shape)
                 box_list.append(box)
+                cat_list.append(category)
+                if need_mask_label:
+                    ctr_mask_label = cv2.rectangle(ctr_mask_label, (box[0], box[1]), (box[2], box[3]), (255), -1)
                 # debug drawing
                 # image = cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
 
             x.append(image)
             y.append(box_list)
+            categories.append(cat_list)
+            ctr_mask_labels.append(ctr_mask_label)
 
-        return np.array(x), np.array(y)
+        return np.array(x), np.array(y), np.array(categories), np.array(ctr_mask_labels)
 
     def gen_toy_detection_datasets(self, train_size=300, test_size=100):
-        train_x, train_y = self.gen_toy_detection_sample(train_size)
-        test_x, test_y = self.gen_toy_detection_sample(test_size)
-        return train_x, train_y, test_x, test_y
+        train_x, train_y, train_cat, train_mask = self.gen_toy_detection_sample(train_size, need_mask_label=True)
+        test_x, test_y, test_cat, test_mask = self.gen_toy_detection_sample(test_size, need_mask_label=True)
+        return train_x, train_y, train_cat, train_mask, test_x, test_y, test_cat, test_mask
 
     def gen_mnsit_detection_datasets(self, mnist_path, train_size=300, test_size=100):
         pass
@@ -91,9 +101,10 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     my_manager = DataManager()
-    train_x, train_y, test_x, test_y = my_manager.gen_toy_detection_datasets()
-    print(train_x.shape, train_y.shape)
-    print(test_x.shape, test_y.shape)
+    train_x, train_y, train_cat, train_mask, test_x, test_y, test_cat, test_mask = my_manager.gen_toy_detection_datasets()
+    print(train_x.shape, train_y.shape, train_cat.shape, train_mask.shape)
+    print(test_x.shape, test_y.shape, test_cat.shape, test_mask.shape)
     cv2.imshow('image', train_x[0])
+    cv2.imshow('mask', train_mask[0])
     cv2.waitKey(0)
     cv2.destroyAllWindows()
