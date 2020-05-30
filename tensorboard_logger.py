@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import cv2
 
 class TensorBoardLogger(tf.keras.callbacks.Callback):
 
@@ -21,6 +22,7 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
 
         test_input = np.expand_dims(self.test_x[0], axis=0)
         prediction = self.model.predict(test_input)
+        results = cv2.hconcat([test_input[0],  cv2.cvtColor(prediction[0],cv2.COLOR_GRAY2RGB)])
+        results = np.expand_dims(results, axis=0)
 
-        tf.summary.image("test_input", test_input, step=epoch)
-        tf.summary.image("test_output", prediction, step=epoch)
+        tf.summary.image("test_input_output", results, step=epoch)
