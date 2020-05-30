@@ -60,6 +60,18 @@ class DataManager(object):
 
         return image, box, shape_choice
 
+
+    def draw_mask(self, box, mask, center_ratio=0.2):
+        w = box[2] - box[0]
+        h = box[3] - box[1]
+        ctr_x = box[0] + (w / 2.0)
+        ctr_y = box[1] + (h / 2.0)
+        scaled_w = (w * center_ratio) / 2.0
+        scaled_h = (h * center_ratio) / 2.0
+
+        mask = cv2.rectangle(mask, (int(ctr_x - scaled_w), int(ctr_y - scaled_h)), (int(ctr_x + scaled_w), int(ctr_y + scaled_h)), (255), -1)
+        return mask
+
     def gen_toy_detection_sample(self, num, shape=(108, 192, 3), need_mask_label=False):
         x = []
         y = []
@@ -78,7 +90,7 @@ class DataManager(object):
                 box_list.append(box)
                 cat_list.append(category)
                 if need_mask_label:
-                    ctr_mask_label = cv2.rectangle(ctr_mask_label, (box[0], box[1]), (box[2], box[3]), (255), -1)
+                    ctr_mask_label = self.draw_mask(box, ctr_mask_label)
                 # debug drawing
                 # image = cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
 
