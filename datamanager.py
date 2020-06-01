@@ -87,10 +87,6 @@ class DataManager(object):
                 l_m[y, x] = (x - x1)
                 b_m[y, x] = (y2 - y)
                 r_m[y, x] = (x2 - x)
-        # t_m /= float(shape[0])
-        # l_m /= float(shape[1])
-        # b_m /= float(shape[0])
-        # r_m /= float(shape[1])
         return t_m, l_m, b_m, r_m
 
     def draw_xyxy_mask(self, box, shape, x1_m, y1_m, x2_m, y2_m):
@@ -152,7 +148,6 @@ class DataManager(object):
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
 
     my_manager = DataManager()
     train_x, train_y, train_cat, train_mask, train_bbox_mask, test_x, test_y, test_cat, test_mask, test_bbox_mask = my_manager.gen_toy_detection_datasets()

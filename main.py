@@ -8,7 +8,7 @@ import loss
 
 # generate and pre-process dummy data
 dm = DataManager()
-train_x, train_y, train_cat, train_mask, train_mask_y, test_x, test_y, test_cat, test_mask, test_mask_y = dm.gen_toy_detection_datasets()
+train_x, train_y, train_cat, train_mask, train_mask_y, test_x, test_y, test_cat, test_mask, test_mask_y = dm.gen_toy_detection_datasets(train_size=600)
 
 train_x = train_x.astype("float32")
 test_x = test_x.astype("float32")
@@ -28,12 +28,11 @@ callbacks = [tensorboard_callback, tensorboard_logger]
 model = RCNNModel()
 
 losses = {"objectness": loss.dice_loss, "bboxes": loss.masked_mae_loss}
-# losses = {"objectness": 'mse', "bboxes": 'mae'}
 
 all_train_mask = np.concatenate([train_mask_y, train_mask], axis=-1)
 
 targets = {"objectness": train_mask, "bboxes": all_train_mask}
-losses_weights = {"objectness": 1.0, "bboxes": 0.01}
+losses_weights = {"objectness": 1.0, "bboxes": 0.1}
 
 opt = keras.optimizers.SGD(learning_rate=0.01, momentum=0.9, nesterov=False)
 

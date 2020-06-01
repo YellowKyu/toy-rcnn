@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import cv2
-
+import random
 
 class TensorBoardLogger(tf.keras.callbacks.Callback):
 
@@ -44,17 +44,14 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
 
         return keep
 
-    def decode_tlbr(self, bboxes, scores):
-        b, y, x, c = np.where(scores > 0.1)
+    def decode_tlbr(self, bboxes, scores, th=0.1):
+        b, y, x, c = np.where(scores > th)
         confident_bboxes = []
         confident_scores = []
         for i, j in zip(y, x):
             t, l, b, r = bboxes[0 , i, j]
             s = scores[0, i, j, 0]
-            # t *= 108.0
-            # b *= 108.0
-            # l *= 192.0
-            # r *= 192.0
+
             x1 = int(max(j - l, 0.0))
             y1 = int(max(i - t, 0.0))
             x2 = int(min(j + r, 191))
@@ -67,7 +64,6 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
         # flatten mask of prediction to vector
         pred_bbox = np.reshape(bboxes, (bboxes.shape[1] * bboxes.shape[2], 4))
         pred_objectness = np.reshape(scores, (scores.shape[1] * scores.shape[2]))
-        #print('all pred : ', pred_bbox.shape, pred_objectness.shape)
 
         # selecting only confident prediction
         confident_pred_score = pred_objectness[np.where(pred_objectness > 0.1)]
@@ -84,15 +80,11 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
         # confident_pred_bbox, confident_pred_score = self.decode_ratio_xyxy(confident_pred_bbox)
 
         # tlbr to xyxy coordinate
-        confident_pred_bbox, confident_pred_score = self.decode_tlbr(bboxes, scores)
-
-        #print('confident pred : ', confident_pred_bbox.shape, confident_pred_score.shape)
+        confident_pred_bbox, confident_pred_score = self.decode_tlbr(bboxes, scores, 0.5)
 
         # filter overlapping bboxes with nms
-        keep_idx = self.nms(confident_pred_bbox, confident_pred_score, 0.4)
+        keep_idx = self.nms(confident_pred_bbox, confident_pred_score, 0.1)
         return confident_pred_bbox[keep_idx], confident_pred_score[keep_idx]
-
-        # return confident_pred_bbox, confident_pred_score
 
     def on_train_batch_end(self, batch, logs=None):
         pass
@@ -102,10 +94,11 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
             tf.summary.scalar("dice loss (epoch)", logs['objectness_loss'], step=epoch)
             tf.summary.scalar("mae loss (epoch)", logs['bboxes_loss'], step=epoch)
             self.writer.flush()
+        test_idx = random.randint(0, len(self.test_y) - 1)
 
-        test_input = np.expand_dims(self.test_x[0], axis=0)
-        test_input_bbox = np.expand_dims(self.test_x[0].copy(), axis=0)
-        test_input_y = self.test_y[0]
+        test_input = np.expand_dims(self.test_x[test_idx], axis=0)
+        test_input_bbox = np.expand_dims(self.test_x[test_idx].copy(), axis=0)
+        test_input_y = self.test_y[test_idx]
 
         for box in test_input_y:
             test_input_bbox[0] = cv2.rectangle(test_input_bbox[0], (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 1)
@@ -113,7 +106,6 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
         prediction = self.model.predict(test_input)
 
         final_bboxes, final_scores = self.pred_post_process(prediction[1], prediction[0])
-        #print('final bboxes : ', final_bboxes.shape, final_scores.shape)
 
         pred_image = cv2.cvtColor(prediction[0][0], cv2.COLOR_GRAY2RGB)
         for box in final_bboxes:
