@@ -44,7 +44,26 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
 
         return keep
 
-    def pred_post_process(self, bboxes, scores):
+    def decode_tlbr(self, bboxes, scores):
+        b, y, x, c = np.where(scores > 0.1)
+        confident_bboxes = []
+        confident_scores = []
+        for i, j in zip(y, x):
+            t, l, b, r = bboxes[0 , i, j]
+            s = scores[0, i, j, 0]
+            # t *= 108.0
+            # b *= 108.0
+            # l *= 192.0
+            # r *= 192.0
+            x1 = int(max(j - l, 0.0))
+            y1 = int(max(i - t, 0.0))
+            x2 = int(min(j + r, 191))
+            y2 = int(min(i + b, 107))
+            confident_bboxes.append([x1, y1, x2, y2])
+            confident_scores.append(s)
+        return np.asarray(confident_bboxes), np.asarray(confident_scores)
+
+    def decode_ratio_xyxy(self, bboxes, scores):
         # flatten mask of prediction to vector
         pred_bbox = np.reshape(bboxes, (bboxes.shape[1] * bboxes.shape[2], 4))
         pred_objectness = np.reshape(scores, (scores.shape[1] * scores.shape[2]))
@@ -54,20 +73,26 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
         confident_pred_score = pred_objectness[np.where(pred_objectness > 0.1)]
         confident_pred_bbox = pred_bbox[np.where(pred_objectness > 0.1)]
 
-        # ratio to xyxy coordinate
         confident_pred_bbox[:, 0] *= self.img_w
         confident_pred_bbox[:, 1] *= self.img_h
         confident_pred_bbox[:, 2] *= self.img_w
         confident_pred_bbox[:, 3] *= self.img_h
+        return confident_pred_bbox, confident_pred_score
+
+    def pred_post_process(self, bboxes, scores):
+        # # ratio to xyxy coordinate
+        # confident_pred_bbox, confident_pred_score = self.decode_ratio_xyxy(confident_pred_bbox)
+
+        # tlbr to xyxy coordinate
+        confident_pred_bbox, confident_pred_score = self.decode_tlbr(bboxes, scores)
 
         #print('confident pred : ', confident_pred_bbox.shape, confident_pred_score.shape)
 
         # filter overlapping bboxes with nms
-        # keep_idx = self.nms(confident_pred_bbox, confident_pred_score, 0.4)
-        # return confident_pred_bbox[keep_idx], confident_pred_score[keep_idx]
+        keep_idx = self.nms(confident_pred_bbox, confident_pred_score, 0.4)
+        return confident_pred_bbox[keep_idx], confident_pred_score[keep_idx]
 
-        #keep_idx = self.nms(confident_pred_bbox, confident_pred_score, 0.4)
-        return confident_pred_bbox, confident_pred_score
+        # return confident_pred_bbox, confident_pred_score
 
     def on_train_batch_end(self, batch, logs=None):
         pass

@@ -61,7 +61,7 @@ class DataManager(object):
 
         return image, box, shape_choice
 
-    def draw_objectness_mask(self, box, mask, center_ratio=0.2):
+    def draw_objectness_mask(self, box, mask, center_ratio=1.0):
         w = box[2] - box[0]
         h = box[3] - box[1]
         ctr_x = box[0] + (w / 2.0)
@@ -72,6 +72,26 @@ class DataManager(object):
         mask = cv2.rectangle(mask, (int(ctr_x - scaled_w), int(ctr_y - scaled_h)),
                              (int(ctr_x + scaled_w), int(ctr_y + scaled_h)), (255), -1)
         return mask
+
+    def draw_tlbr_mask(self, box, shape, t_m, l_m, b_m, r_m):
+        w = box[2] - box[0]
+        h = box[3] - box[1]
+        x1 = box[0]
+        y1 = box[1]
+        x2 = box[2]
+        y2 = box[3]
+
+        for x in range(x1, x2):
+            for y in range(y1, y2):
+                t_m[y, x] = (y - y1)
+                l_m[y, x] = (x - x1)
+                b_m[y, x] = (y2 - y)
+                r_m[y, x] = (x2 - x)
+        # t_m /= float(shape[0])
+        # l_m /= float(shape[1])
+        # b_m /= float(shape[0])
+        # r_m /= float(shape[1])
+        return t_m, l_m, b_m, r_m
 
     def draw_xyxy_mask(self, box, shape, x1_m, y1_m, x2_m, y2_m):
         x1 = float(box[0]) / float(shape[1])
@@ -109,7 +129,8 @@ class DataManager(object):
                 cat_list.append(category)
                 if need_mask_label:
                     objectness_mask_label = self.draw_objectness_mask(box, objectness_mask_label)
-                    x1_m_l, y1_m_l, x2_m_l, y2_m_l = self.draw_xyxy_mask(box, shape, x1_m_l, y1_m_l, x2_m_l, y2_m_l)
+                    # x1_m_l, y1_m_l, x2_m_l, y2_m_l = self.draw_xyxy_mask(box, shape, x1_m_l, y1_m_l, x2_m_l, y2_m_l)
+                    x1_m_l, y1_m_l, x2_m_l, y2_m_l = self.draw_tlbr_mask(box, shape, x1_m_l, y1_m_l, x2_m_l, y2_m_l)
 
             x.append(image)
             bboxes.append(box_list)

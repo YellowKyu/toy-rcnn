@@ -33,8 +33,11 @@ losses = {"objectness": loss.dice_loss, "bboxes": loss.masked_mae_loss}
 all_train_mask = np.concatenate([train_mask_y, train_mask], axis=-1)
 
 targets = {"objectness": train_mask, "bboxes": all_train_mask}
-losses_weights = {"objectness": 1.0, "bboxes": 2.0}
+losses_weights = {"objectness": 1.0, "bboxes": 0.01}
 
+opt = keras.optimizers.SGD(learning_rate=0.01, momentum=0.9, nesterov=False)
+
+# model.model.compile(optimizer=opt, loss=losses, loss_weights=losses_weights)
 model.model.compile(optimizer='adam', loss=losses, loss_weights=losses_weights)
 
 model.model.fit(train_x, targets,

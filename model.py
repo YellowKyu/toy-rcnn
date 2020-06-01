@@ -13,7 +13,7 @@ class RCNNModel(object):
         objectness = layers.Conv2D(filters=1, kernel_size=(1, 1), activation="sigmoid", padding="same", name="objectness")(x)
 
         # bounding boxes (tlbr, ratio, 0-1)
-        bboxes = layers.Conv2D(filters=4, kernel_size=(1, 1), activation="sigmoid", padding="same", name="bboxes")(x)
+        bboxes = layers.Conv2D(filters=4, kernel_size=(1, 1), activation="relu", padding="same", name="bboxes")(x)
 
 
         self.model = keras.Model(inputs=inputs, outputs=[objectness, bboxes])
