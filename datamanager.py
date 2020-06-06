@@ -46,7 +46,7 @@ class DataManager(object):
         x2 = min(ctr_x + radius, max_x - 1)
         y2 = min(ctr_y + radius, max_y - 1)
 
-        return ctr_x, ctr_y, radius, np.array([x1, y1, x2, y2])
+        return ctr_x, ctr_y, radius, np.array([x1, y1, x2, y2]).astype("float32")
 
     def gen_random_shape(self, image, shape):
         shape_choice = random.randint(1, 2)
@@ -81,8 +81,8 @@ class DataManager(object):
         x2 = box[2]
         y2 = box[3]
 
-        for x in range(x1, x2):
-            for y in range(y1, y2):
+        for x in range(int(x1), int(x2)):
+            for y in range(int(y1), int(y2)):
                 t_m[y, x] = (y - y1)
                 l_m[y, x] = (x - x1)
                 b_m[y, x] = (y2 - y)
@@ -121,22 +121,25 @@ class DataManager(object):
             num_obj = random.randint(1, 3)
             for _ in range(num_obj):
                 image, box, category = self.gen_random_shape(image, shape)
-                box_list.append(box)
+                box_list.append(np.array(box))
                 cat_list.append(category)
                 if need_mask_label:
                     objectness_mask_label = self.draw_objectness_mask(box, objectness_mask_label)
                     # x1_m_l, y1_m_l, x2_m_l, y2_m_l = self.draw_xyxy_mask(box, shape, x1_m_l, y1_m_l, x2_m_l, y2_m_l)
                     x1_m_l, y1_m_l, x2_m_l, y2_m_l = self.draw_tlbr_mask(box, shape, x1_m_l, y1_m_l, x2_m_l, y2_m_l)
 
+            for _ in range(5 - num_obj):
+                box_list.append(np.array([0, 0, 0, 0]))
+
             x.append(image)
-            bboxes.append(box_list)
+            bboxes.append(np.array(box_list))
             categories.append(cat_list)
             objectness_mask_labels.append(objectness_mask_label)
 
             xyxy_mask_label = np.stack([x1_m_l, y1_m_l, x2_m_l, y2_m_l], axis=-1)
             bboxes_mask_labels.append(xyxy_mask_label)
 
-        return np.array(x), np.array(bboxes), np.array(categories), np.array(objectness_mask_labels), np.array(bboxes_mask_labels)
+        return np.asarray(x), np.array(bboxes), np.asarray(categories), np.asarray(objectness_mask_labels), np.asarray(bboxes_mask_labels)
 
     def gen_toy_detection_datasets(self, train_size=300, test_size=100):
         train_x, train_y, train_cat, train_mask, train_bbox_mask = self.gen_toy_detection_sample(train_size, need_mask_label=True)
@@ -159,7 +162,7 @@ if __name__ == '__main__':
     print(train_y[0])
     print(bbox, map[int((bbox[1] + bbox[3]) / 2)][int((bbox[0] + bbox[2]) / 2)])
     for box in train_y[0]:
-        train_x[0] = cv2.rectangle(train_x[0], (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 1)
+        train_x[0] = cv2.rectangle(train_x[0], (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 1)
 
     cv2.imshow('image', train_x[0])
     cv2.imshow('mask', train_mask[0])

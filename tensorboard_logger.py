@@ -76,11 +76,11 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
         return confident_pred_bbox, confident_pred_score
 
     def pred_post_process(self, bboxes, scores):
-        # # ratio to xyxy coordinate
-        # confident_pred_bbox, confident_pred_score = self.decode_ratio_xyxy(confident_pred_bbox)
+        # ratio to xyxy coordinate
+        confident_pred_bbox, confident_pred_score = self.decode_ratio_xyxy(bboxes, scores)
 
         # tlbr to xyxy coordinate
-        confident_pred_bbox, confident_pred_score = self.decode_tlbr(bboxes, scores, 0.5)
+        # confident_pred_bbox, confident_pred_score = self.decode_tlbr(bboxes, scores, 0.5)
 
         # filter overlapping bboxes with nms
         keep_idx = self.nms(confident_pred_bbox, confident_pred_score, 0.1)
@@ -91,26 +91,27 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         if logs is not None:
-            tf.summary.scalar("dice loss (epoch)", logs['objectness_loss'], step=epoch)
-            tf.summary.scalar("mae loss (epoch)", logs['bboxes_loss'], step=epoch)
+            print(logs)
+            # tf.summary.scalar("dice loss (epoch)", logs['objectness_loss'], step=epoch)
+            # tf.summary.scalar("mae loss (epoch)", logs['bboxes_loss'], step=epoch)
             self.writer.flush()
-        test_idx = random.randint(0, len(self.test_y) - 1)
-
-        test_input = np.expand_dims(self.test_x[test_idx], axis=0)
-        test_input_bbox = np.expand_dims(self.test_x[test_idx].copy(), axis=0)
-        test_input_y = self.test_y[test_idx]
-
-        for box in test_input_y:
-            test_input_bbox[0] = cv2.rectangle(test_input_bbox[0], (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 1)
-
-        prediction = self.model.predict(test_input)
-
-        final_bboxes, final_scores = self.pred_post_process(prediction[1], prediction[0])
-
-        pred_image = cv2.cvtColor(prediction[0][0], cv2.COLOR_GRAY2RGB)
-        for box in final_bboxes:
-            pred_image = cv2.rectangle(pred_image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 1)
-
-        results = cv2.hconcat([test_input_bbox[0], pred_image])
-        results = np.expand_dims(results, axis=0)
-        tf.summary.image("test_input_output", results, step=epoch)
+        # test_idx = random.randint(0, len(self.test_y) - 1)
+        #
+        # test_input = np.expand_dims(self.test_x[test_idx], axis=0)
+        # test_input_bbox = np.expand_dims(self.test_x[test_idx].copy(), axis=0)
+        # test_input_y = self.test_y[test_idx]
+        #
+        # for box in test_input_y:
+        #     test_input_bbox[0] = cv2.rectangle(test_input_bbox[0], (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 1)
+        #
+        # prediction = self.model.predict(test_input)
+        #
+        # final_bboxes, final_scores = self.pred_post_process(prediction[1], prediction[0])
+        #
+        # pred_image = cv2.cvtColor(prediction[0][0], cv2.COLOR_GRAY2RGB)
+        # for box in final_bboxes:
+        #     pred_image = cv2.rectangle(pred_image, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 1)
+        #
+        # results = cv2.hconcat([test_input_bbox[0], pred_image])
+        # results = np.expand_dims(results, axis=0)
+        # tf.summary.image("test_input_output", results, step=epoch)

@@ -11,14 +11,22 @@ class RCNNModel(object):
         # objectness score
         objectness = layers.Conv2D(filters=1, kernel_size=(3, 3), activation="sigmoid", padding="same", name="objectness")(x)
 
-        # bounding boxes (tlbr, ratio, 0-1)
+        # # bounding boxes (tlbr, ratio, 0-1)
         x_1 = layers.Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")(x)
         x_2 = layers.Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")(x_1)
         x_3 = layers.Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")(x_2)
-        x_4 = layers.Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")(x_3)
-        x_5 = layers.Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")(x_4)
-        bboxes = layers.Conv2D(filters=4, kernel_size=(3, 3), activation="relu", padding="same", name="bboxes")(x_5)
+        # x_4 = layers.Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")(x_3)
+        # x_5 = layers.Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")(x_4)
+        # bboxes = layers.Conv2D(filters=4, kernel_size=(3, 3), activation="relu", padding="same", name="bboxes")(x_5)
 
+        # bounding boxes
+        x_3_flatten = layers.Flatten()(x_3)
+        b_1 = layers.Dense(4, activation='relu', name="b_1")(x_3_flatten)
+        b_2 = layers.Dense(4, activation='relu', name="b_2")(x_3_flatten)
+        b_3 = layers.Dense(4, activation='relu', name="b_3")(x_3_flatten)
+        b_4 = layers.Dense(4, activation='relu', name="b_4")(x_3_flatten)
+        b_5 = layers.Dense(4, activation='relu', name="b_5")(x_3_flatten)
+        bboxes = layers.concatenate([b_1, b_2, b_3, b_4, b_5], axis=0, name="bboxes")
 
         self.model = keras.Model(inputs=inputs, outputs=[objectness, bboxes])
         self.model.summary()

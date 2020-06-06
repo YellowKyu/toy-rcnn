@@ -5,10 +5,14 @@ from datamanager import DataManager
 from tensorboard_logger import TensorBoardLogger
 from model import RCNNModel
 import loss
+import os
+
+# os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # generate and pre-process dummy data
 dm = DataManager()
-train_x, train_y, train_cat, train_mask, train_mask_y, test_x, test_y, test_cat, test_mask, test_mask_y = dm.gen_toy_detection_datasets(train_size=600)
+train_x, train_y, train_cat, train_mask, train_mask_y, test_x, test_y, test_cat, test_mask, test_mask_y = dm.gen_toy_detection_datasets(
+    train_size=300)
 
 train_x = train_x.astype("float32")
 test_x = test_x.astype("float32")
@@ -27,11 +31,11 @@ callbacks = [tensorboard_callback, tensorboard_logger]
 
 model = RCNNModel()
 
-losses = {"objectness": loss.dice_loss, "bboxes": loss.masked_mae_loss}
+losses = {"objectness": loss.dice_loss, "bboxes": loss.matching_loss}
 
 all_train_mask = np.concatenate([train_mask_y, train_mask], axis=-1)
 
-targets = {"objectness": train_mask, "bboxes": all_train_mask}
+targets = {"objectness": train_mask, "bboxes": train_y}
 losses_weights = {"objectness": 1.0, "bboxes": 0.1}
 
 opt = keras.optimizers.SGD(learning_rate=0.01, momentum=0.9, nesterov=False)
@@ -40,5 +44,5 @@ opt = keras.optimizers.SGD(learning_rate=0.01, momentum=0.9, nesterov=False)
 model.model.compile(optimizer='adam', loss=losses, loss_weights=losses_weights)
 
 model.model.fit(train_x, targets,
-          batch_size=1, epochs=30,
-          callbacks=callbacks)
+               batch_size=1, epochs=1,
+               callbacks=callbacks)
