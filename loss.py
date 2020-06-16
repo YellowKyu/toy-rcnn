@@ -9,7 +9,11 @@ def dice_loss(y_true, y_pred):
 
 def masked_mae_loss(y_true, y_pred):
     # split bbox and objectness mask
+    # y_true = tf.image.resize(y_true, (54, 96),
+    #                             method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+
     bbox_mask = y_true[:, :, :, 0:-1]
+
     objectness_mask = K.expand_dims(y_true[:, :, :, -1], axis=-1)
 
     # count number of pixel inside  gt bounding boxes

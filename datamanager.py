@@ -52,12 +52,12 @@ class DataManager(object):
         shape_choice = random.randint(1, 2)
         color = (random.randint(0, 254), random.randint(0, 254), random.randint(0, 254))
 
-        # if shape_choice == 1:
-        #     pts, box = self.gen_triangle(shape)
-        #     cv2.drawContours(image, [pts], 0, color, -1)
-        # elif shape_choice == 2:
-        ctr_x, ctr_y, radius, box = self.gen_circle(shape)
-        cv2.circle(image, (ctr_x, ctr_y), radius, color, -1)
+        if shape_choice == 1:
+            pts, box = self.gen_triangle(shape)
+            cv2.drawContours(image, [pts], 0, color, -1)
+        elif shape_choice == 2:
+            ctr_x, ctr_y, radius, box = self.gen_circle(shape)
+            cv2.circle(image, (ctr_x, ctr_y), radius, color, -1)
 
         return image, box, shape_choice
 
@@ -83,10 +83,10 @@ class DataManager(object):
 
         for x in range(x1, x2):
             for y in range(y1, y2):
-                t_m[y, x] = (y - y1)
-                l_m[y, x] = (x - x1)
-                b_m[y, x] = (y2 - y)
-                r_m[y, x] = (x2 - x)
+                t_m[y, x] = (y - y1) / float(shape[0])
+                l_m[y, x] = (x - x1) / float(shape[1])
+                b_m[y, x] = (y2 - y) / float(shape[0])
+                r_m[y, x] = (x2 - x) / float(shape[1])
         return t_m, l_m, b_m, r_m
 
     def draw_xyxy_mask(self, box, shape, x1_m, y1_m, x2_m, y2_m):

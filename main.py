@@ -26,13 +26,12 @@ tensorboard_logger = TensorBoardLogger(logdir + '/train_loss', test_x, test_y)
 callbacks = [tensorboard_callback, tensorboard_logger]
 
 model = RCNNModel()
-
 losses = {"objectness": loss.dice_loss, "bboxes": loss.masked_mae_loss}
 
 all_train_mask = np.concatenate([train_mask_y, train_mask], axis=-1)
 
 targets = {"objectness": train_mask, "bboxes": all_train_mask}
-losses_weights = {"objectness": 1.0, "bboxes": 0.1}
+losses_weights = {"objectness": 1.0, "bboxes": 1.0}
 
 opt = keras.optimizers.SGD(learning_rate=0.01, momentum=0.9, nesterov=False)
 

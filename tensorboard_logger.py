@@ -52,10 +52,10 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
             t, l, b, r = bboxes[0 , i, j]
             s = scores[0, i, j, 0]
 
-            x1 = int(max(j - l, 0.0))
-            y1 = int(max(i - t, 0.0))
-            x2 = int(min(j + r, 191))
-            y2 = int(min(i + b, 107))
+            x1 = int(max(j - (l * 192.0), 0.0))
+            y1 = int(max(i - (t * 108.0), 0.0))
+            x2 = int(min(j + (r * 192.0), 191))
+            y2 = int(min(i + (b * 108.0), 107))
             confident_bboxes.append([x1, y1, x2, y2])
             confident_scores.append(s)
         return np.asarray(confident_bboxes), np.asarray(confident_scores)
