@@ -106,11 +106,14 @@ class DataManager(object):
         bboxes = []
         categories = []
         objectness_mask_labels = []
+        categories_mask_labels = []
         bboxes_mask_labels = []
 
         for _ in range(num):
             image = np.zeros(shape, np.uint8)
             objectness_mask_label = np.zeros((shape[0], shape[1], 1), np.uint8)
+            background_mask_label = np.full_like(objectness_mask_label, 255)
+            category_mask_label = np.zeros((shape[0], shape[1], 2), np.uint8)
             x1_m_l = np.zeros((shape[0], shape[1]), np.float32)
             y1_m_l = np.zeros((shape[0], shape[1]), np.float32)
             x2_m_l = np.zeros((shape[0], shape[1]), np.float32)
@@ -125,23 +128,28 @@ class DataManager(object):
                 cat_list.append(category)
                 if need_mask_label:
                     objectness_mask_label = self.draw_objectness_mask(box, objectness_mask_label)
+                    category_mask_label[box[1]:box[3], box[0]:box[2], int(category - 1)] = 255.0
+
                     # x1_m_l, y1_m_l, x2_m_l, y2_m_l = self.draw_xyxy_mask(box, shape, x1_m_l, y1_m_l, x2_m_l, y2_m_l)
                     x1_m_l, y1_m_l, x2_m_l, y2_m_l = self.draw_tlbr_mask(box, shape, x1_m_l, y1_m_l, x2_m_l, y2_m_l)
 
+            background_mask_label = background_mask_label - objectness_mask_label
+            cat_mask_label = np.dstack([background_mask_label, category_mask_label])
             x.append(image)
             bboxes.append(box_list)
             categories.append(cat_list)
             objectness_mask_labels.append(objectness_mask_label)
+            categories_mask_labels.append(cat_mask_label)
 
             xyxy_mask_label = np.stack([x1_m_l, y1_m_l, x2_m_l, y2_m_l], axis=-1)
             bboxes_mask_labels.append(xyxy_mask_label)
 
-        return np.array(x), np.array(bboxes), np.array(categories), np.array(objectness_mask_labels), np.array(bboxes_mask_labels)
+        return np.array(x), np.array(bboxes), np.array(categories), np.array(objectness_mask_labels), np.array(bboxes_mask_labels), np.array(categories_mask_labels)
 
     def gen_toy_detection_datasets(self, train_size=300, test_size=100):
-        train_x, train_y, train_cat, train_mask, train_bbox_mask = self.gen_toy_detection_sample(train_size, need_mask_label=True)
-        test_x, test_y, test_cat, test_mask, test_bbox_mask = self.gen_toy_detection_sample(test_size, need_mask_label=True)
-        return train_x, train_y, train_cat, train_mask, train_bbox_mask, test_x, test_y, test_cat, test_mask, test_bbox_mask
+        train_x, train_y, train_cat, train_mask, train_bbox_mask, train_cat_mask = self.gen_toy_detection_sample(train_size, need_mask_label=True)
+        test_x, test_y, test_cat, test_mask, test_bbox_mask, test_cat_mask = self.gen_toy_detection_sample(test_size, need_mask_label=True)
+        return train_x, train_y, train_cat, train_mask, train_bbox_mask, train_cat_mask, test_x, test_y, test_cat, test_mask, test_bbox_mask, test_cat_mask
 
     def gen_mnsit_detection_datasets(self, mnist_path, train_size=300, test_size=100):
         pass
@@ -150,9 +158,9 @@ class DataManager(object):
 if __name__ == '__main__':
 
     my_manager = DataManager()
-    train_x, train_y, train_cat, train_mask, train_bbox_mask, test_x, test_y, test_cat, test_mask, test_bbox_mask = my_manager.gen_toy_detection_datasets()
-    print(train_x.shape, train_y.shape, train_cat.shape, train_mask.shape, train_bbox_mask.shape)
-    print(test_x.shape, test_y.shape, test_cat.shape, test_mask.shape, test_bbox_mask.shape)
+    train_x, train_y, _, train_mask, train_bbox_mask, train_cat_mask, test_x, test_y, _, test_mask, test_bbox_mask, test_cat_mask = my_manager.gen_toy_detection_datasets(train_size=3, test_size=1)
+    print(train_x.shape, train_y.shape, train_mask.shape, train_bbox_mask.shape)
+    print(test_x.shape, test_y.shape, test_mask.shape, test_bbox_mask.shape)
 
     bbox = train_y[0][0]
     map = train_bbox_mask[0]
@@ -163,6 +171,9 @@ if __name__ == '__main__':
 
     cv2.imshow('image', train_x[0])
     cv2.imshow('mask', train_mask[0])
+    cv2.imshow('cat_mask cat_1', train_cat_mask[0, :, :, 0])
+    cv2.imshow('cat_mask cat_2', train_cat_mask[0, :, :, 1])
+    cv2.imshow('cat_mask cat_3', train_cat_mask[0, :, :, 2])
     cv2.imshow('bb_mask_x1', cv2.applyColorMap(train_bbox_mask[0][:, :, 0].astype(np.uint8), cv2.COLORMAP_JET))
     cv2.imshow('bb_mask_y1', cv2.applyColorMap(train_bbox_mask[0][:, :, 1].astype(np.uint8), cv2.COLORMAP_JET))
     cv2.imshow('bb_mask_x2', cv2.applyColorMap(train_bbox_mask[0][:, :, 2].astype(np.uint8), cv2.COLORMAP_JET))

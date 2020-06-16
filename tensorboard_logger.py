@@ -89,10 +89,17 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
     def on_train_batch_end(self, batch, logs=None):
         pass
 
+    def extract_channel_as_image(self, image, channel):
+        channel_image = image[:, :, channel]
+        channel_image = np.expand_dims(channel_image, axis=-1)
+        cat_image = cv2.cvtColor(channel_image, cv2.COLOR_GRAY2RGB)
+        return cat_image
+
     def on_epoch_end(self, epoch, logs=None):
         if logs is not None:
-            tf.summary.scalar("dice loss (epoch)", logs['objectness_loss'], step=epoch)
+            tf.summary.scalar("obj dice loss (epoch)", logs['objectness_loss'], step=epoch)
             tf.summary.scalar("mae loss (epoch)", logs['bboxes_loss'], step=epoch)
+            tf.summary.scalar("cat dice loss (epoch)", logs['category_loss'], step=epoch)
             self.writer.flush()
         test_idx = random.randint(0, len(self.test_y) - 1)
 
@@ -104,13 +111,18 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
             test_input_bbox[0] = cv2.rectangle(test_input_bbox[0], (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 1)
 
         prediction = self.model.predict(test_input)
-
+        # print('')
+        # print(prediction[2][0].shape, prediction[2][0][:, :, 0].shape, prediction[0][0].shape)
         final_bboxes, final_scores = self.pred_post_process(prediction[1], prediction[0])
 
         pred_image = cv2.cvtColor(prediction[0][0], cv2.COLOR_GRAY2RGB)
+        cat_0_image = self.extract_channel_as_image(prediction[2][0], 0)
+        cat_1_image = self.extract_channel_as_image(prediction[2][0], 1)
+        cat_2_image = self.extract_channel_as_image(prediction[2][0], 2)
+
         for box in final_bboxes:
             pred_image = cv2.rectangle(pred_image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 1)
 
-        results = cv2.hconcat([test_input_bbox[0], pred_image])
+        results = cv2.hconcat([test_input_bbox[0], pred_image, cat_0_image, cat_1_image, cat_2_image])
         results = np.expand_dims(results, axis=0)
         tf.summary.image("test_input_output", results, step=epoch)

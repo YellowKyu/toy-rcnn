@@ -1,6 +1,16 @@
 import tensorflow as tf
 import tensorflow.keras.backend as K
 
+def my_print(y_true, y_pred):
+    print('my_print: ', y_true.shape, y_pred.shape)
+    return 0.0
+
+def category_mask_loss(y_true, y_pred):
+    y_true = K.reshape(y_true, shape=(1, y_pred.shape[1] * y_pred.shape[2], y_pred.shape[3]))
+    y_pred = K.reshape(y_pred, shape=(1, y_pred.shape[1] * y_pred.shape[2], y_pred.shape[3]))
+    cross_entropy = K.categorical_crossentropy(y_true, y_pred)
+    return K.mean(cross_entropy)
+
 def dice_loss(y_true, y_pred):
     numerator = 2 * tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
     denominator = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
