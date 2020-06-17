@@ -6,6 +6,7 @@ def my_print(y_true, y_pred):
     return 0.0
 
 def category_mask_loss(y_true, y_pred):
+    y_pred = tf.image.resize(y_pred, (108, 192), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
     y_true = K.reshape(y_true, shape=(1, y_pred.shape[1] * y_pred.shape[2], y_pred.shape[3]))
     y_pred = K.reshape(y_pred, shape=(1, y_pred.shape[1] * y_pred.shape[2], y_pred.shape[3]))
     cross_entropy = K.categorical_crossentropy(y_true, y_pred)

@@ -100,7 +100,6 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
             tf.summary.scalar("obj dice loss (epoch)", logs['objectness_loss'], step=epoch)
             tf.summary.scalar("mae loss (epoch)", logs['bboxes_loss'], step=epoch)
             tf.summary.scalar("cat dice loss (epoch)", logs['category_loss'], step=epoch)
-            self.writer.flush()
         test_idx = random.randint(0, len(self.test_y) - 1)
 
         test_input = np.expand_dims(self.test_x[test_idx], axis=0)
@@ -123,6 +122,12 @@ class TensorBoardLogger(tf.keras.callbacks.Callback):
         for box in final_bboxes:
             pred_image = cv2.rectangle(pred_image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 1)
 
-        results = cv2.hconcat([test_input_bbox[0], pred_image, cat_0_image, cat_1_image, cat_2_image])
+        results = cv2.hconcat([test_input_bbox[0], pred_image])
         results = np.expand_dims(results, axis=0)
         tf.summary.image("test_input_output", results, step=epoch)
+
+        cat_results = cv2.hconcat([cat_0_image, cat_1_image, cat_2_image])
+        cat_results = np.expand_dims(cat_results, axis=0)
+        tf.summary.image("test_cat_masks", cat_results, step=epoch)
+
+        self.writer.flush()
